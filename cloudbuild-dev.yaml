@@ -8,36 +8,42 @@ substitutions:
   _REGION: "us-central1"           # Change to your Cloud Run region
   _SERVICE_NAME: "my-cloudrun-app" # Change to your service name
   _IMAGE_NAME: "my-cloudrun-app"   # Name for container image
-
 steps:
   # Step 1: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build',
-      '-t', 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}',
-      '.'
-    ]
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-cloudrun-app:$COMMIT_SHA', '.']
 
   # Step 2: Push Docker image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'push',
-      'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}'
-    ]
+    args: ['push', 'gcr.io/$PROJECT_ID/my-cloudrun-app:$COMMIT_SHA']
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args: [
-      'run', 'deploy', '${_SERVICE_NAME}',
-      '--image', 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}',
-      '--region', '${_REGION}',
-      '--platform', 'managed',
-      '--allow-unauthenticated'
-    ]
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy my-cloudrun-app \
+          --image gcr.io/$PROJECT_ID/my-cloudrun-app:$COMMIT_SHA \
+          --region us-central1 \
+          --platform managed \
+          --quiet
+
+  # Step 4: Make service public
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run services add-iam-policy-binding my-cloudrun-app \
+          --region us-central1 \
+          --member=allUsers \
+          --role=roles/run.invoker
+
+# Optional substitutions
+substitutions:
+  _SERVICE_NAME: 'my-cloudrun-app'
 
 images:
-  - 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}'
+  - 'gcr.io/$PROJECT_ID/my-cloudrun-app:$COMMIT_SHA'
 
-# Optionally, you can add timeout if build may take longer
-timeout: '1200s'
