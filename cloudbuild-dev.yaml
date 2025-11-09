@@ -1,51 +1,43 @@
-# build.yaml
-# Build and deploy Python Cloud Run app
+# cloudbuild.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY  # Send logs to Cloud Logging
+  machineType: "E2_HIGHCPU_8" # Optional, adjust if needed
 
-# Use built-in substitutions like $PROJECT_ID, $BUILD_ID
-# Custom substitutions can be added if needed
+substitutions:
+  _PROJECT_ID: $PROJECT_ID
+  _REGION: "us-central1"           # Change to your Cloud Run region
+  _SERVICE_NAME: "my-cloudrun-app" # Change to your service name
+  _IMAGE_NAME: "my-cloudrun-app"   # Name for container image
 
 steps:
   # Step 1: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      [
-        'build',
-        '-t',
-        'gcr.io/$PROJECT_ID/my-cloudrun-app:$BUILD_ID',
-        '.'
-      ]
+    args: [
+      'build',
+      '-t', 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}',
+      '.'
+    ]
 
-  # Step 2: Push Docker image to Artifact Registry / Container Registry
+  # Step 2: Push Docker image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      [
-        'push',
-        'gcr.io/$PROJECT_ID/my-cloudrun-app:$BUILD_ID'
-      ]
+    args: [
+      'push',
+      'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}'
+    ]
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        # Set GCP project (optional, usually already set in build environment)
-        gcloud config set project $PROJECT_ID
+    entrypoint: gcloud
+    args: [
+      'run', 'deploy', '${_SERVICE_NAME}',
+      '--image', 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}',
+      '--region', '${_REGION}',
+      '--platform', 'managed',
+      '--allow-unauthenticated'
+    ]
 
-        # Deploy to Cloud Run
-        gcloud run deploy my-cloudrun-app \
-          --image gcr.io/$PROJECT_ID/my-cloudrun-app:$BUILD_ID \
-          --platform managed \
-          --region us-central1 \
-          --allow-unauthenticated
-
-# Optional: define timeouts, artifacts, or substitutions
-timeout: '1200s'  # 20 minutes
-
-# Substitutions (optional)
-substitutions:
-  _CUSTOM_VAR: "example"
-
-# Optionally, specify images to keep in Cloud Build artifacts
 images:
-  - 'gcr.io/$PROJECT_ID/my-cloudrun-app:$BUILD_ID'
+  - 'gcr.io/${_PROJECT_ID}/${_IMAGE_NAME}:${SHORT_SHA}'
+
+# Optionally, you can add timeout if build may take longer
+timeout: '1200s'
