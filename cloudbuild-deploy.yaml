@@ -10,28 +10,28 @@ substitutions:
   _IMAGE_TAG: "$COMMIT_SHA"   # <- use the commit SHA from build
   _ENV: "dev"                 # dev, test, prod
 
-steps:
-  # Step 1: Deploy to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "Deploying $_SERVICE_NAME-$_ENV with image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG"
-        gcloud run deploy $_SERVICE_NAME-$_ENV \
-          --image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG \
-          --region $_REGION \
-          --platform managed \
-          --quiet
+# Correct way inside steps
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      # Deploy service
+      gcloud run deploy $_SERVICE_NAME-$_ENV \
+        --image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG \
+        --region $_REGION \
+        --platform managed \
+        --quiet
 
-        # Make service public
-        gcloud run services add-iam-policy-binding $_SERVICE_NAME-$_ENV \
-          --region $_REGION \
-          --member=allUsers \
-          --role=roles/run.invoker
+      # Make service public
+      gcloud run services add-iam-policy-binding $_SERVICE_NAME-$_ENV \
+        --region $_REGION \
+        --member=allUsers \
+        --role=roles/run.invoker
 
-        # Print service URL
-        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME-$_ENV \
-          --region $_REGION \
-          --format 'value(status.url)')
-        echo "Cloud Run service URL: $SERVICE_URL"
+      # Print the URL
+      SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME-$_ENV \
+        --region $_REGION \
+        --format 'value(status.url)')
+      echo "Cloud Run service URL: $SERVICE_URL"
+
