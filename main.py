@@ -25,4 +25,4 @@ async def process_data(data: dict):
     
 @app.get("/ping")
 def ping():
-    return {"message": "pong"}
+    return {"message": "ponging"}
