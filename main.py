@@ -22,3 +22,7 @@ async def process_data(data: dict):
     # Example logic: convert text to uppercase
     result = text.upper()
     return {"result": result}
+    
+@app.get("/ping")
+def ping():
+    return {"message": "pong"}
