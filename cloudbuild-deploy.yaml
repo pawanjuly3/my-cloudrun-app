@@ -6,9 +6,9 @@ options:
 substitutions:
   _PROJECT_ID: $PROJECT_ID
   _REGION: "us-central1"
-  _SERVICE_NAME: "my-cloudrun-app"
-  _IMAGE_TAG: "latest"   # Or COMMIT_SHA
-  _ENV: "dev"            # dev, test, prod
+  _SERVICE_NAME: "my-cloudrun-app"   # base name of service
+  _IMAGE_TAG: "$COMMIT_SHA"           # Use the exact image built
+  _ENV: "dev"                         # dev, test, prod
 
 steps:
   # Step 1: Deploy to Cloud Run
@@ -17,21 +17,21 @@ steps:
     args:
       - '-c'
       - |
-        echo "Deploying $_SERVICE_NAME-$_ENV with image: gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG"
+        echo "Deploying $_SERVICE_NAME-$_ENV using image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG"
         gcloud run deploy $_SERVICE_NAME-$_ENV \
           --image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG \
           --region $_REGION \
           --platform managed \
           --quiet
-        echo "Deployment complete."
 
-  # Step 2: Print Cloud Run URL
+  # Step 2: Make service public
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME-$_ENV \
+        echo "Making $_SERVICE_NAME-$_ENV public"
+        gcloud run services add-iam-policy-binding $_SERVICE_NAME-$_ENV \
           --region $_REGION \
-          --format 'value(status.url)')
-        echo "Cloud Run service URL: $SERVICE_URL"
+          --member=allUsers \
+          --role=roles/run.invoker
