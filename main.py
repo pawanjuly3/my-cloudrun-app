@@ -21,4 +21,4 @@ async def process_data(data: dict):
     text = data.get("text", "")
     # Example logic: convert text to uppercase
     result = text.upper()
-    return {"result": result}
+    return {"results": result}
