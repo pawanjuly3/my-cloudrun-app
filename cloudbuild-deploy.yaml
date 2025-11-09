@@ -33,3 +33,9 @@ steps:
           --region $_REGION \
           --member=allUsers \
           --role=roles/run.invoker
+
+    # Print service URL
+      SERVICE_URL=$(gcloud run services describe my-cloudrun-app-dev \
+        --region us-central1 \
+        --format 'value(status.url)')
+      echo "Cloud Run service URL: $SERVICE_URL"
