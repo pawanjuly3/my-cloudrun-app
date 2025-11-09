@@ -18,7 +18,7 @@ steps:
       - '-c'
       - |
         gcloud run deploy $_SERVICE_NAME-$_ENV \
-          --image gcr.io/$_PROJECT_ID/$_SERVICE_NAME:$_IMAGE_TAG \
+          --image gcr.io/$PROJECT_ID/my-cloudrun-app:$COMMIT_SHA \
           --region $_REGION \
           --platform managed \
           --quiet
